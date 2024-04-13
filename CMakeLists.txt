@@ -1,11 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.12)
 project(parrot_arsdk)
-
-find_package(catkin REQUIRED)
-
-catkin_package(
-  CFG_EXTRAS parrot_arsdk.cmake
-)
 
 ###########
 ## Build ##
@@ -27,6 +21,9 @@ message(STATUS "Host architecure: ${BUILD_HOST_ARCH}")
 add_custom_target(ARSDK_MKDIR
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARDRONESDK3_DEVEL_PATH})
 
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
 include(ExternalProject)
 ExternalProject_Add(ARSDKBuildUtils
     DEPENDS ARSDK_MKDIR
@@ -43,38 +40,86 @@ add_custom_target(ARSDKPopulate ALL
   COMMENT "Populating ARDroneSDK to devel space: ${ARDRONESDK3_DEVEL_PATH}"
   WORKING_DIRECTORY ${ARDRONESDK3_DEVEL_PATH}/src/ARSDKBuildUtils
   # Populate the build results into the devel space
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  COMMAND cp -rp ./out/arsdk-native/staging/usr/include/* ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}/${PROJECT_NAME}
-  COMMAND cp -rp ./out/arsdk-native/staging/usr/lib/* ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION}/${PROJECT_NAME}
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/${PROJECT_NAME}
-  COMMAND cp -rp ./out/arsdk-native/staging/usr/share/* ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/${PROJECT_NAME}
-  #COMMAND ${CMAKE_COMMAND} -E make_directory ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION}/${PROJECT_NAME}
-  #COMMAND cp -rp ./out/Unix-base/staging/usr/bin/* ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION}/${PROJECT_NAME}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include
+  COMMAND cp -rp ./out/arsdk-native/staging/usr/include/* ${PROJECT_BINARY_DIR}/include
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/lib
+  COMMAND cp -rp ./out/arsdk-native/staging/usr/lib/* ${PROJECT_BINARY_DIR}/lib
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/share
+  COMMAND cp -rp ./out/arsdk-native/staging/usr/share/* ${PROJECT_BINARY_DIR}/share
+  #COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/bin
+  #COMMAND cp -rp ./out/Unix-base/staging/usr/bin/* ${PROJECT_BINARY_DIR}/bin
 )
 add_dependencies(ARSDKPopulate ARSDKBuildUtils)
 
-#############
-## Install ##
-#############
+set(BEBOP_LIBS
+  libarcommands.so
+  libarcontroller.so
+  libardatatransfer.so
+  libardiscovery.so
+  libarmavlink.so
+  libarmedia.so
+  libarnetwork.so
+  libarnetworkal.so
+  libarsal.so
+  libarstream.so
+  libarstream2.so
+  libarupdater.so
+  libarutils.so
+  libcrypto.so
+  libcurl.so
+  libfutils.so
+  libjson-c.so
+  libjson.so
+  libmux.so
+  libpomp.so
+  libpuf.so
+  librtsp.so
+  libsdp.so
+  libssl.so
+  libtar.so
+  libtls.so
+  libulog.so
+)
+set(BEBOP_LIBS_FULL_PATH ${BEBOP_LIBS})
+list(TRANSFORM BEBOP_LIBS_FULL_PATH PREPEND ${PROJECT_BINARY_DIR}/lib/)
 
-#install(DIRECTORY ${ARDRONESDK3_PATH}/bin/
-#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#  USE_SOURCE_PERMISSIONS
-#)
+add_library(arsdk INTERFACE)
+add_dependencies(arsdk ARSDKPopulate)
 
-install(DIRECTORY ${ARDRONESDK3_PATH}/include/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+
+write_basic_package_version_file(
+    arsdkConfigVersion.cmake
+    VERSION 1.0.0
+    COMPATIBILITY SameMajorVersion
 )
 
-install(DIRECTORY ${ARDRONESDK3_PATH}/lib/
-  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/parrot_arsdk
+install(
+  TARGETS arsdk 
+  EXPORT arsdkTargets
 )
 
-install(DIRECTORY ${ARDRONESDK3_PATH}/share/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+configure_package_config_file(
+    cmake/arsdk.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/arsdkConfig.cmake
+    INSTALL_DESTINATION lib/cmake/arsdk
 )
 
-install(DIRECTORY ${ARDRONESDK3_PATH}/../etc/
-  DESTINATION ${CATKIN_PACKAGE_ETC_DESTINATION}
+install(EXPORT arsdkTargets
+    FILE arsdkTargets.cmake
+    NAMESPACE arsdk::
+    DESTINATION lib/cmake/arsdk
+)
+
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/arsdkConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/arsdkConfigVersion.cmake
+    DESTINATION lib/cmake/arsdk
+)
+
+install(
+    FILES ${BEBOP_LIBS_FULL_PATH} DESTINATION lib
+)
+install(
+  DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include 
 )
