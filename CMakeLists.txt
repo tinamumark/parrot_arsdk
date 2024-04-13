@@ -96,6 +96,7 @@ write_basic_package_version_file(
 install(
   TARGETS arsdk 
   EXPORT arsdkTargets
+  DESTINATION lib/
 )
 
 configure_package_config_file(

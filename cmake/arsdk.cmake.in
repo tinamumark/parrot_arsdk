@@ -2,30 +2,10 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/arsdkTargets.cmake")
 
-# Check if the dependencies are found and add them to the target's interface
-include(CMakeFindDependencyMacro)
-
-# Include any dependencies if needed
-# find_dependency(OtherLibrary)
-
-# Create an imported target for arsdk
-add_library(arsdk INTERFACE IMPORTED)
-target_link_libraries(arsdk INTERFACE ${BEBOP_LIBS})
-
-# Link any dependencies if needed
-#target_link_libraries(arsdk INTERFACE ${BEBOP_LIBS})
-
-# Set include directories
-get_filename_component(arsdk_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}" PATH)
-target_include_directories(arsdk
-    INTERFACE
-        "$<INSTALL_INTERFACE:${PROJECT_BINARY_DIR}/include>"
-        "$<BUILD_INTERFACE:${arsdk_PREFIX_DIR}/../../include>"
-)
-
-# Add compile definitions or options if needed
-# target_compile_definitions(arsdk INTERFACE SOME_DEFINITION)
-
 # Set properties for arsdk target if needed
-#set_target_properties(arsdk PROPERTIES 
-#    INTERFACE_LINK_LIBRARIES ${BEBOP_LIBS})
+set(BEBOP_LIBS_FULL_PATH @BEBOP_LIBS@)
+message(STATUS @BEBOP_LIBS@)
+get_filename_component(arsdk_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}" PATH)
+list(TRANSFORM BEBOP_LIBS_FULL_PATH PREPEND ${arsdk_PREFIX_DIR}/../)
+set(arsdk_LIBRARIES ${BEBOP_LIBS_FULL_PATH})
+
