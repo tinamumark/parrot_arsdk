@@ -9,15 +9,20 @@ from __future__ import print_function
 import subprocess
 
 try:
-  arch = subprocess.check_output(["gcc", "-dumpmachine"]).strip().split("-")[0]
-  if arch in ["aarch64", "arm64"]:
-    o = "aarch64"
-  elif arch in ["x86_64", "amd64"]:
-    o = "x64"
-  elif "arm" in arch:
-    o = "arm"
-  else:
-    o = "x86"
-  print(o, end='')
+    arch = (
+        subprocess.check_output(["gcc", "-dumpmachine"])
+        .decode("utf-8")
+        .strip()
+        .split("-")[0]
+    )
+    if arch in ["aarch64", "arm64"]:
+        o = "aarch64"
+    elif arch in ["x86_64", "amd64"]:
+        o = "x64"
+    elif "arm" in arch:
+        o = "arm"
+    else:
+        o = "x86"
+    print(o, end="")
 except:
-  pass
+    pass
